@@ -207,8 +207,16 @@ object BiomeSpawns {
                     return@execute
                 }
 
+                val deduped = filtered.entries
+                    .groupBy { entry ->
+                        entry.key.id.substringBefore("-").trim().replace("\\s+".toRegex(), "").lowercase()
+                    }
+                    .mapValues { (_, entries) -> entries.minBy { it.value } }
+                    .values
+                    .associate { it.key to it.value }
+
                 val maxDisplay = ConfigManager.config.biomeSpawn.maxPokemonDisplayed
-                val sorted = filtered.entries
+                val sorted = deduped.entries
                     .sortedByDescending { it.value }
                     .take(maxDisplay)
 

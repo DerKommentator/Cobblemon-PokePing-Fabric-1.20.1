@@ -41,7 +41,6 @@ object HudOverlay : HudRenderCallback {
     )
 
     fun updateDisplay(newEntries: List<PokemonDisplayEntry>, biome: String) {
-        logger.info("onHudRender called, newEntries=${newEntries} biome=${biome} entries=${displayEntries.size}, enabled=${ConfigManager.config.biomeSpawn.enabled}")
         val maxEntries = ConfigManager.config.biomeSpawn.maxPokemonDisplayed
         val limited = newEntries.take(maxEntries)
 

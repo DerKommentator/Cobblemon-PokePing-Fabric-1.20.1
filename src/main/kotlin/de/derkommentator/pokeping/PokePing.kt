@@ -18,7 +18,6 @@ import net.minecraft.client.MinecraftClient
 import org.slf4j.LoggerFactory
 import java.net.HttpURLConnection
 import java.net.URI
-import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.round
