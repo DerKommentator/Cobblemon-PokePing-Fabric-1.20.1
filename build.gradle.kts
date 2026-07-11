@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("java")
     id("fabric-loom") version("1.10-SNAPSHOT")
-    kotlin("jvm") version ("2.1.20")
+    kotlin("jvm") version ("2.3.20")
 }
 
 group = property("maven_group")!!
@@ -57,6 +57,6 @@ tasks {
     }
 
     compileKotlin {
-        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
     }
 }

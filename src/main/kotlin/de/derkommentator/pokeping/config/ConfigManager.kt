@@ -40,6 +40,7 @@ data class PokePingConfig(
 
 data class PokePingBiomeSpawns(
     var enabled: Boolean = false,
+    var showBiomeName: Boolean = false,
     var modelsEnabled: Boolean = true,
     var bucketMode: BiomeBucketMode = BiomeBucketMode.ALL,
     var overlayPosition: OverlayPosition = OverlayPosition.TOP_LEFT,
@@ -63,12 +64,12 @@ object ConfigManager {
     fun save() {
         configFile.parentFile.mkdirs()
         configFile.writeText(gson.toJson(config))
-        println(config.toString())
+//        println(config.toString())
     }
 
     fun saveLocalConfig(config: PokePingConfig) {
         configFile.parentFile.mkdirs()
         configFile.writeText(gson.toJson(config))
-        println(config.toString())
+//        println(config.toString())
     }
 }

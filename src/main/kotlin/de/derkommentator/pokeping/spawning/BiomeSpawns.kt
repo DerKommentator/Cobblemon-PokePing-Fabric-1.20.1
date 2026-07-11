@@ -2,12 +2,13 @@ package de.derkommentator.pokeping.spawning
 
 import com.cobblemon.mod.common.Cobblemon
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies
-import com.cobblemon.mod.common.api.spawning.CobblemonWorldSpawnerManager
 import com.cobblemon.mod.common.api.spawning.SpawnBucket
 import com.cobblemon.mod.common.api.spawning.SpawnCause
 import com.cobblemon.mod.common.api.spawning.detail.SpawnDetail
-import com.cobblemon.mod.common.api.spawning.spawner.SpawningArea
+import com.cobblemon.mod.common.api.spawning.position.calculators.SpawnablePositionCalculator.Companion.prioritizedAreaCalculators
+import com.cobblemon.mod.common.api.spawning.spawner.SpawningZoneInput
 import com.cobblemon.mod.common.pokemon.Species
+import com.cobblemon.mod.common.util.spawner
 import de.derkommentator.pokeping.config.BiomeBucketMode
 import de.derkommentator.pokeping.config.ConfigManager
 import de.derkommentator.pokeping.hud.HudOverlay
@@ -53,7 +54,7 @@ object BiomeSpawns {
 
     fun biomeHasTag(world: World, pos: BlockPos, tagString: String): Boolean {
         val raw = tagString.removePrefix("#")
-        val id = Identifier(raw.lowercase(Locale.ROOT))
+        val id = Identifier.of(raw.lowercase(Locale.ROOT))
         val tagKey = TagKey.of(RegistryKeys.BIOME, id)
 
         // world.getBiome(pos) liefert ein RegistryEntry<Biome> / Holder<Biome> mit isIn(...)
@@ -64,7 +65,7 @@ object BiomeSpawns {
     fun biomeMatchesAnyTag(world: World, pos: BlockPos, tagStrings: List<String>): Boolean {
         val biomeEntry = world.getBiome(pos)
         return tagStrings.any { rawTag ->
-            val id = Identifier(rawTag.removePrefix("#").lowercase(Locale.ROOT))
+            val id = Identifier.of(rawTag.removePrefix("#").lowercase(Locale.ROOT))
             val tagKey = TagKey.of(RegistryKeys.BIOME, id)
             biomeEntry.isIn(tagKey)
         }
@@ -160,39 +161,45 @@ object BiomeSpawns {
                 val selectedBuckets = if (biomeBucketMode == BiomeBucketMode.ALL) ALL_BUCKETS else listOf(biomeBucketMode)
                 val allProbabilities = mutableMapOf<SpawnDetail, Float>()
 
-                val spawner = CobblemonWorldSpawnerManager.spawnersForPlayers[uuid] ?: return@execute
+                val spawner = player.spawner
 
                 for (biomeBucket in selectedBuckets) {
                     val bucket = SpawnBucket(biomeBucket.value, biomeBucket.bucketPercentage)
-                    val cause = SpawnCause(spawner, bucket, player)
+                    val cause = SpawnCause(spawner, player)
 
-                    val area = SpawningArea(
-                        cause = cause,
-                        world = world,
-                        baseX = MathHelper.ceil(player.x - Cobblemon.config.worldSliceDiameter / 2F),
-                        baseY = MathHelper.ceil(player.y - Cobblemon.config.worldSliceHeight / 2F),
-                        baseZ = MathHelper.ceil(player.z - Cobblemon.config.worldSliceDiameter / 2F),
-                        length = Cobblemon.config.worldSliceDiameter,
-                        height = Cobblemon.config.worldSliceHeight,
-                        width = Cobblemon.config.worldSliceDiameter
+                    val slice = Cobblemon.spawningZoneGenerator.generate(
+                        spawner = spawner,
+                        input = SpawningZoneInput(
+                            cause = cause,
+                            world = world,
+                            baseX = MathHelper.ceil(player.x - Cobblemon.config.spawningZoneDiameter / 2F),
+                            baseY = MathHelper.ceil(player.y - Cobblemon.config.spawningZoneHeight / 2F),
+                            baseZ = MathHelper.ceil(player.z - Cobblemon.config.spawningZoneDiameter / 2F),
+                            length = Cobblemon.config.spawningZoneDiameter,
+                            height = Cobblemon.config.spawningZoneHeight,
+                            width = Cobblemon.config.spawningZoneDiameter
+                        )
                     )
 
-                    val slice = spawner.prospector.prospect(spawner, area)
-                    val contexts = spawner.resolver.resolve(spawner, spawner.contextCalculators, slice)
-                    val spawnProbabilities = spawner.getSpawningSelector().getProbabilities(spawner, contexts)
+                    val contexts = Cobblemon.areaSpawnablePositionResolver.resolve(spawner, prioritizedAreaCalculators, slice)
+                    val spawnProbabilities = spawner.selector.getProbabilities(spawner, bucket, contexts).toMutableMap()
 
                     for ((spawnEntry, innerProbability) in spawnProbabilities) {
                         val totalProbability = (innerProbability / 100) * biomeBucket.bucketPercentage
 
-                        allProbabilities[spawnEntry] = (allProbabilities[spawnEntry] ?: 0f) + totalProbability
+//                        allProbabilities[spawnEntry] = (allProbabilities[spawnEntry] ?: 0f) + totalProbability
+                        allProbabilities[spawnEntry] = innerProbability
                     }
                 }
 
-
-
                 val filtered = allProbabilities.filter { (spawnEntry, _) ->
-//                    val speciesName = spawnEntry.getName().string
-                    ConfigManager.config.species.contains(spawnEntry.id.replace(Regex("-\\d+$"), "").lowercase())
+                    val internalName = spawnEntry.id.substringBefore("-").lowercase()
+                    val translatedName = spawnEntry.getName().string.trim().replace("\\s".toRegex(), "").lowercase()
+
+                    ConfigManager.config.species.any { species ->
+                        val speciesLower = species.trim().replace("\\s".toRegex(), "").lowercase()
+                        internalName == speciesLower || translatedName == speciesLower
+                    }
                 }
 
                 if (filtered.isEmpty()) {
@@ -206,7 +213,7 @@ object BiomeSpawns {
                     .take(maxDisplay)
 
                 val entries = sorted.mapNotNull { (spawnEntry, probability) ->
-                    val pokemonId = spawnEntry.id.replace(Regex("-\\d+$"), "").lowercase()
+                    val pokemonId = spawnEntry.id.substringBefore("-").lowercase()
                     val species = speciesCache[pokemonId]
                     if (species == null) {
                         logger.warn("Species '${pokemonId}' not found in cache.")

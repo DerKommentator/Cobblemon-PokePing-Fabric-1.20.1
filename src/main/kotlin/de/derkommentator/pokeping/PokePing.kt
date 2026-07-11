@@ -17,6 +17,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.minecraft.client.MinecraftClient
 import org.slf4j.LoggerFactory
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -33,7 +34,7 @@ object PokePing : ModInitializer {
 
         ConfigManager.load()
         cfg = ConfigManager.config
-        logger.info("Loaded Config: $cfg")
+        logger.info("Loaded Config")
 
         ClientLifecycleEvents.CLIENT_STARTED.register {
             ensureExecutor()
@@ -127,7 +128,7 @@ object PokePing : ModInitializer {
     private fun sendDiscordWebhook(urlString: String, username: String, message: String) {
         executor.submit {
             try {
-                val url = URL(urlString)
+                val url = URI.create(urlString).toURL()
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
@@ -151,7 +152,7 @@ object PokePing : ModInitializer {
     private fun sendDiscordEmbedWebhook(urlString: String, username: String, title: String, description: String, imageUrl: String?) {
         executor.submit {
             try {
-                val url = URL(urlString)
+                val url = URI.create(urlString).toURL()
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")

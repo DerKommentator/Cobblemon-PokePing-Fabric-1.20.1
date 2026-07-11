@@ -1,6 +1,7 @@
 package de.derkommentator.pokeping.hud
 
 import com.cobblemon.mod.common.client.gui.drawProfilePokemon
+import com.cobblemon.mod.common.client.render.models.blockbench.FloatingState
 import com.cobblemon.mod.common.util.math.fromEulerXYZDegrees
 import com.mojang.blaze3d.systems.RenderSystem
 import de.derkommentator.pokeping.PokePing
@@ -9,6 +10,7 @@ import de.derkommentator.pokeping.config.OverlayPosition
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.gui.DrawContext
+import net.minecraft.client.render.RenderTickCounter
 import net.minecraft.text.Text
 import net.minecraft.util.Identifier
 import org.joml.Quaternionf
@@ -39,6 +41,7 @@ object HudOverlay : HudRenderCallback {
     )
 
     fun updateDisplay(newEntries: List<PokemonDisplayEntry>, biome: String) {
+        logger.info("onHudRender called, newEntries=${newEntries} biome=${biome} entries=${displayEntries.size}, enabled=${ConfigManager.config.biomeSpawn.enabled}")
         val maxEntries = ConfigManager.config.biomeSpawn.maxPokemonDisplayed
         val limited = newEntries.take(maxEntries)
 
@@ -48,44 +51,48 @@ object HudOverlay : HudRenderCallback {
         lastBiome = biome
     }
 
-    override fun onHudRender(context: DrawContext, tickDelta: Float) {
+    override fun onHudRender(context: DrawContext, tickCounter: RenderTickCounter) {
         val mc = MinecraftClient.getInstance() ?: return
 
         if (!ConfigManager.config.biomeSpawn.enabled || mc.player == null) return
 
         val startX: Int
-        val startY: Int
+        var startY: Int
         val width = mc.window.scaledWidth
         val height = mc.window.scaledHeight
 
         when (ConfigManager.config.biomeSpawn.overlayPosition) {
             OverlayPosition.TOP_LEFT -> {
-                startX = 20; startY = 20
+                startX = 10; startY = 10
             }
             OverlayPosition.TOP_RIGHT -> {
-                startX = width - 150; startY = 20
+                startX = width - 150; startY = 10
             }
             OverlayPosition.BOTTOM_LEFT -> {
-                startX = 20; startY = height - (displayEntries.size * ENTRY_DISTANCE) - 20
+                startX = 10; startY = height - (displayEntries.size * ENTRY_DISTANCE) - 10
             }
             OverlayPosition.BOTTOM_RIGHT -> {
-                startX = width - 150; startY = height - (displayEntries.size * ENTRY_DISTANCE) - 20
+                startX = width - 150; startY = height - (displayEntries.size * ENTRY_DISTANCE) - 10
             }
         }
 
-        context.drawText(
-            mc.textRenderer,
-            Text.translatable("${PokePing.MOD_ID}.hud.biomeTitle", lastBiome),
-            startX,
-            startY,
-            0xFFFFFF,
-            false
-        )
+        if (ConfigManager.config.biomeSpawn.showBiomeName) {
+            context.drawText(
+                mc.textRenderer,
+                Text.translatable("${PokePing.MOD_ID}.hud.biomeTitle", lastBiome),
+                startX,
+                startY,
+                0xFFFFFF,
+                true
+            )
+        } else {
+            startY -= 10
+        }
 
         var y = startY
         for (entry in displayEntries) {
             try {
-                drawPokemonEntry(context, entry, tickDelta, startX, y)
+                drawPokemonEntry(context, entry, tickCounter.getTickDelta(true), startX, y)
             } catch (e: Exception) {
                 logger.error("Failed to render ${entry.name}", e)
             }
@@ -104,16 +111,15 @@ object HudOverlay : HudRenderCallback {
 
             matrixStack.push()
             matrixStack.translate(x.toDouble() + 18.0, y.toDouble() + 18.0, 0.0)
-
+            val state = FloatingState()
             try {
                 drawProfilePokemon(
-                    entry.resourceIdentifier,
-                    entry.aspects,
-                    matrixStack,
-                    rotation,
-                    null,
-                    tickDelta,
-                    12f
+                    species = entry.resourceIdentifier,
+                    matrixStack = matrixStack,
+                    rotation = rotation,
+                    state = state,
+                    scale = 12f,
+                    partialTicks = tickDelta
                 )
             } catch (e: Exception) {
                 logger.warn("Pokemon ${entry.name} could not be rendered: ${e.message}")

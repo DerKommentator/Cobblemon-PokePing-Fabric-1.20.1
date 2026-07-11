@@ -41,10 +41,17 @@ class PokePingMenu : ModMenuApi {
             val biomeCategory = builder.getOrCreateCategory(Text.translatable("${PokePing.MOD_ID}.config.biomeCategoryTitle"))
 
             biomeCategory.addEntry(
-                entryBuilder.startBooleanToggle(Text.translatable("${PokePing.MOD_ID}.config.showBiomeSpawnTitle"), ConfigManager.config.biomeSpawn.enabled)
+                entryBuilder.startBooleanToggle(Text.translatable("${PokePing.MOD_ID}.config.enableBiomeSpawn"), ConfigManager.config.biomeSpawn.enabled)
                     .setDefaultValue(false)
                     .setTooltip(Text.translatable("${PokePing.MOD_ID}.config.showBiomeSpawnTooltip"))
                     .setSaveConsumer { localConfig.biomeSpawn.enabled = it }
+                    .build()
+            )
+
+            biomeCategory.addEntry(
+                entryBuilder.startBooleanToggle(Text.translatable("${PokePing.MOD_ID}.config.showBiomeName"), ConfigManager.config.biomeSpawn.showBiomeName)
+                    .setDefaultValue(false)
+                    .setSaveConsumer { localConfig.biomeSpawn.showBiomeName = it }
                     .build()
             )
 

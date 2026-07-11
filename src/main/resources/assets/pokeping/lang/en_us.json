@@ -11,7 +11,8 @@
     "pokeping.config.pokemonList": "Pokémon List",
 
     "pokeping.config.biomeCategoryTitle": "Biome Spawns",
-    "pokeping.config.showBiomeSpawnTitle": "Show Biome Spawns",
+    "pokeping.config.enableBiomeSpawn": "Enable Biome Spawns Overlay",
+    "pokeping.config.showBiomeName": "Show Biome Name",
     "pokeping.config.showBiomeSpawnTooltip": "Show Pokémon that can spawn in the current biome",
     "pokeping.config.biomeBucketMode": "Rarity category",
     "pokeping.config.showBiomeOverlay": "Show pokémon models in overlay",

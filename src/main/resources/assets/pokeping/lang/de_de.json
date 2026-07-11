@@ -11,7 +11,8 @@
     "pokeping.config.pokemonList": "Pokémon Liste",
 
     "pokeping.config.biomeCategoryTitle": "Biome Spawns",
-    "pokeping.config.showBiomeSpawnTitle": "Biome Spawns aktivieren",
+    "pokeping.config.enableBiomeSpawn": "Biome Spawns Overlay aktivieren",
+    "pokeping.config.showBiomeName": "Biome Name anzeigen",
     "pokeping.config.showBiomeSpawnTooltip": "Anzeigen lassen, welche Pokémon mit welcher Wahrscheinlichkeit spawnen können",
     "pokeping.config.biomeBucketMode": "Seltenheitskategorie",
     "pokeping.config.showBiomeOverlay": "Pokémon Models im Overlay einblenden",
